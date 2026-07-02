@@ -13,6 +13,8 @@ class BookService {
       category: payload.category,
       description: payload.description,
       imgUrl: payload.imgUrl,
+      quantity: payload.quantity,
+      year: payload.year,
     };
 
     // Remove undefined fields

@@ -5,6 +5,8 @@ const app = express();
 
 const loansRouter = require("./app/routes/loan.route");
 const booksRouter = require("./app/routes/book.route");
+const publishersRouter = require("./app/routes/publisher.route");
+const readersRouter = require("./app/routes/reader.route");
 
 const ApiError = require("./app/api-error");
 app.use(cors());
@@ -16,6 +18,8 @@ app.get("/", (req, res) => {
 // Đăng ký đường dẫn API cho mượn sách
 app.use("/api/loans", loansRouter);
 app.use("/api/books", booksRouter);
+app.use("/api/publishers", publishersRouter);
+app.use("/api/readers", readersRouter);
 
 // Xử lý lỗi 404 (Không tìm thấy trang)
 app.use((req, res, next) => {

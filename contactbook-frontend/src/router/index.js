@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoanManager from "@/views/LoanManager.vue";
-import BookManager from "@/views/BookManager.vue"; // Bắt buộc phải import file này
-
+import Book from "@/views/Book.vue"; // Bắt buộc phải import file này
+import BookManager from "@/views/BookManager.vue";
+import BookDetail from "@/views/BookDetail.vue";
+import BookEdit from "@/views/BookEdit.vue";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -11,9 +13,28 @@ const router = createRouter({
       component: LoanManager,
     },
     {
-      path: "/books",
+      path: "/book",
+      name: "book",
+      component: Book, // Sử dụng trực tiếp
+    },
+
+    {
+      path: "/book/:id",
+      name: "bookdetail",
+      component: BookDetail,
+      props: true,
+    },
+    {
+      path: "/bookmanager",
       name: "bookmanager",
-      component: BookManager, // Sử dụng trực tiếp
+      component: BookManager,
+      props: true,
+    },
+    {
+      path: "/bookmanager/edit/:id",
+      name: "bookedit",
+      component: BookEdit,
+      props: true,
     },
     // {
     //   path: "/loans/add",

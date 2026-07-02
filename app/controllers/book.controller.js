@@ -9,7 +9,9 @@ exports.create = async (req, res, next) => {
     !req.body?.auth ||
     !req.body?.description ||
     !req.body?.category ||
-    !req.body?.imgUrl
+    !req.body?.imgUrl ||
+    !req.body?.quantity ||
+    !req.body?.year
   ) {
     return next(new ApiError(400, "Borrower name cannot be empty"));
   }
