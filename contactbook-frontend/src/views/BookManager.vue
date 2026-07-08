@@ -102,7 +102,7 @@ export default {
       this.retrieveBooks();
     },
     goToAddBook() {
-      this.$router.push({ name: "book.add" }); // Trỏ tới trang tạo form thêm sách mới
+      this.$router.push({ name: "bookadd" }); // Trỏ tới trang tạo form thêm sách mới
     },
     goToEditBook(id) {
       this.$router.push({ name: "bookedit", params: { id: id } }); // Trỏ tới trang Form chỉnh sửa sách

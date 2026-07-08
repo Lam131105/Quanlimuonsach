@@ -1,3 +1,5 @@
+const bcrypt = require("bcrypt");
+
 const { ObjectId } = require("mongodb");
 
 class ReaderService {
@@ -12,8 +14,10 @@ class ReaderService {
       firstName: payload.firstName,
       birthDay: payload.birthDay,
       gender: payload.gender,
+      gmail: payload.gmail,
       address: payload.address,
       phone: payload.phone,
+      password: payload.password,
     };
 
     // Remove undefined fields
@@ -25,6 +29,11 @@ class ReaderService {
 
   async create(payload) {
     const reader = this.extractConactData(payload);
+    if (reader.password) {
+      const saltRounds = 10; // Độ phức tạp của thuật toán băm mã hóa
+      reader.password = await bcrypt.hash(reader.password, saltRounds);
+      // Mật khẩu "123456" gõ vào sẽ biến thành chuỗi dạng "$2b$10$xyz..." cực kỳ an toàn trong DB
+    }
     const result = await this.reader.findOneAndUpdate(
       reader, // Tham số 1: Bộ lọc (tìm xem sách này đã tồn tại chưa)
       { $set: reader }, // Tham số 2: Nếu chưa có hoặc có rồi thì cập nhật thông tin này vào
@@ -79,6 +88,23 @@ class ReaderService {
   async deleteAll() {
     const result = await this.reader.deleteMany({});
     return result.deletedCount;
+  }
+
+  async login(gmail, password) {
+    // 1. Tìm độc giả trong database dựa vào Gmail
+    // (Lưu ý: Bạn dùng this.reader hay this.collection thì sửa lại cho đúng nhé)
+    const reader = await this.reader.findOne({ gmail: gmail });
+    if (!reader) {
+      return null; // Không tìm thấy user
+    }
+    // 2. So sánh mật khẩu bằng bcrypt
+    const isMatch = await bcrypt.compare(password, reader.password);
+    if (!isMatch) {
+      return null; // Sai mật khẩu
+    }
+    // 3. Bảo mật: Xóa mật khẩu hash trước khi trả về
+    delete reader.password;
+    return reader; // Trả về thông tin user hợp lệ
   }
 }
 

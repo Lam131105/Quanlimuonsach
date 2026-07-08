@@ -13,5 +13,6 @@ router
   .get(readers.findOne)
   .put(readers.update)
   .delete(readers.delete);
+router.post("/login", readers.login);
 
 module.exports = router;

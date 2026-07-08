@@ -7,6 +7,7 @@ const loansRouter = require("./app/routes/loan.route");
 const booksRouter = require("./app/routes/book.route");
 const publishersRouter = require("./app/routes/publisher.route");
 const readersRouter = require("./app/routes/reader.route");
+const categoriesRouter = require("./app/routes/category.route");
 
 const ApiError = require("./app/api-error");
 app.use(cors());
@@ -20,6 +21,7 @@ app.use("/api/loans", loansRouter);
 app.use("/api/books", booksRouter);
 app.use("/api/publishers", publishersRouter);
 app.use("/api/readers", readersRouter);
+app.use("/api/categories", categoriesRouter);
 
 // Xử lý lỗi 404 (Không tìm thấy trang)
 app.use((req, res, next) => {
