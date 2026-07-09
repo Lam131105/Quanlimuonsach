@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import LoanManager from "@/views/LoanManager.vue";
 import Book from "@/views/Book.vue"; // Bắt buộc phải import file này
 import BookManager from "@/views/BookManager.vue";
+import CategoryManager from "@/views/CategoryManager.vue";
 import BookDetail from "@/views/BookDetail.vue";
 import BookAdd from "@/views/BookAdd.vue";
 import BookEdit from "@/views/BookEdit.vue";
@@ -14,6 +15,11 @@ const router = createRouter({
       path: "/",
       name: "loanmanager",
       component: LoanManager,
+    },
+    {
+      path: "/categorymanager",
+      name: "categorymanager",
+      component: CategoryManager,
     },
     {
       path: "/book",

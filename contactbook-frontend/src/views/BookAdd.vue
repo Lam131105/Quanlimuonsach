@@ -27,7 +27,8 @@ export default {
       newBook: {
         name: "",
         auth: "",
-        category: "",
+        categoryIds: [], // Khởi tạo mảng trống để lưu các ID thể loại được tích chọn
+        publisherId: "",
         description: "",
         imgUrl: "",
       },

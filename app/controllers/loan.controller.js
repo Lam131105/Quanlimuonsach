@@ -1,11 +1,15 @@
-const LoanService = require("../services/loan.service"); // Hãy chắc chắn tên file service của bạn là loan.service.js hoặc loans.service.js
-const MongoDB = require("../utils/mongodb.util");
+const LoanService = require("../services/loan.service");
+const MongoDB = require("../utils/mongodb.util"); // Đường dẫn cục diện kết nối của bạn
 const ApiError = require("../api-error");
 
-// Create and Save a new Loan
+// 1. Xử lý Tạo lượt mượn sách mới
 exports.create = async (req, res, next) => {
-  if (!req.body?.borrowerName) {
-    return next(new ApiError(400, "Borrower name cannot be empty"));
+  const { readerid, bookid, staffid, borrowDate } = req.body;
+
+  if (!readerid || !bookid || !staffid) {
+    return next(
+      new ApiError(400, "Độc giả, Sách và Nhân viên duyệt không được để trống"),
+    );
   }
 
   try {
@@ -13,31 +17,34 @@ exports.create = async (req, res, next) => {
     const document = await loanService.create(req.body);
     return res.send(document);
   } catch (error) {
-    return next(
-      new ApiError(500, "An error occurred while creating the loan record"),
-    );
+    console.error(error);
+    return next(new ApiError(500, "Có lỗi xảy ra khi tạo lượt mượn sách"));
   }
 };
 
-// Retrieve all loans from the database
+// 2. Lấy toàn bộ danh sách mượn sách
 exports.findAll = async (req, res, next) => {
-  let documents = [];
-
   try {
     const loanService = new LoanService(MongoDB.client);
-    const { name } = req.query; // Tìm kiếm theo query string: ?name=xxx
-    if (name) {
-      documents = await loanService.findByName(name);
-    } else {
-      documents = await loanService.find({});
-    }
+    const documents = await loanService.findAll();
+    return res.send(documents);
   } catch (error) {
-    return next(
-      new ApiError(500, "An error occurred while retrieving loan records"),
-    );
+    return next(new ApiError(500, "Có lỗi khi lấy danh sách mượn sách"));
   }
+};
 
-  return res.send(documents);
+// 3. Cập nhật lượt mượn (Ví dụ: Khi độc giả đem sách đến TRẢ)
+exports.update = async (req, res, next) => {
+  try {
+    const loanService = new LoanService(MongoDB.client);
+    const document = await loanService.update(req.params.id, req.body);
+    if (!document) {
+      return next(new ApiError(404, "Không tìm thấy lượt mượn sách này"));
+    }
+    return res.send({ message: "Cập nhật thông tin mượn trả thành công" });
+  } catch (error) {
+    return next(new ApiError(500, "Có lỗi xảy ra khi cập nhật mượn trả"));
+  }
 };
 
 // Find a single loan with an id
@@ -55,26 +62,6 @@ exports.findOne = async (req, res, next) => {
         500,
         `Error retrieving loan record with id=${req.params.id}`,
       ),
-    );
-  }
-};
-
-// Update a loan by the id in the request
-exports.update = async (req, res, next) => {
-  if (Object.keys(req.body).length === 0) {
-    return next(new ApiError(400, "Data to update cannot be empty"));
-  }
-
-  try {
-    const loanService = new LoanService(MongoDB.client);
-    const document = await loanService.update(req.params.id, req.body);
-    if (!document) {
-      return next(new ApiError(404, "Loan record not found"));
-    }
-    return res.send({ message: "Loan record was updated successfully" });
-  } catch (error) {
-    return next(
-      new ApiError(500, `Error updating loan record with id=${req.params.id}`),
     );
   }
 };

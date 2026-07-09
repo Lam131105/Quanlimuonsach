@@ -2,18 +2,30 @@ const BookService = require("../services/book.service"); // Hãy chắc chắn t
 const MongoDB = require("../utils/mongodb.util");
 const ApiError = require("../api-error");
 
-// Create and Save a new Book
+// Tạo và Lưu một cuốn sách mới
 exports.create = async (req, res, next) => {
+  // Kiểm tra các trường bắt buộc mới (Sách cần có mảng thể loại và id NXB)
   if (
     !req.body?.name ||
-    !req.body?.auth ||
+    !req.body?.year ||
     !req.body?.description ||
-    !req.body?.category ||
+    !req.body?.categoryIds || // Mảng ID Thể loại từ Frontend gửi lên
+    !req.body?.publisherId || // ID Nhà xuất bản từ Frontend gửi lên
     !req.body?.imgUrl
-    // !req.body?.quantity
-    // !req.body?.year
   ) {
-    return next(new ApiError(400, "Borrower name cannot be empty"));
+    return next(
+      new ApiError(
+        400,
+        "Thông tin sách (Tên, Tác giả, Thể loại, Nhà xuất bản, Ảnh) không được để trống",
+      ),
+    );
+  }
+
+  // Đảm bảo categoryIds gửi lên phải là một mảng
+  if (!Array.isArray(req.body.categoryIds)) {
+    return next(
+      new ApiError(400, "Danh sách thể loại (categoryIds) phải là một mảng []"),
+    );
   }
 
   try {
@@ -21,8 +33,9 @@ exports.create = async (req, res, next) => {
     const document = await bookService.create(req.body);
     return res.send(document);
   } catch (error) {
+    console.error("Lỗi tạo sách:", error);
     return next(
-      new ApiError(500, "An error occurred while creating the book record"),
+      new ApiError(500, "Có lỗi xảy ra trong quá trình tạo sách mới"),
     );
   }
 };

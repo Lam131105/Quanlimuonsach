@@ -1,17 +1,16 @@
 const bcrypt = require("bcrypt");
-
 const { ObjectId } = require("mongodb");
 const { getNextSequenceValue } = require("../utils/sequence.util");
 
-class ReaderService {
+class StaffService {
   constructor(client) {
-    this.reader = client.db().collection("readers");
+    this.staff = client.db().collection("staffs");
     this.db = client.db();
   }
 
   // Định nghĩa các phương thức truy xuất CSDL sử dụng mongodb API
   extractConactData(payload) {
-    const reader = {
+    const staff = {
       lastName: payload.lastName,
       firstName: payload.firstName,
       birthDay: payload.birthDay,
@@ -23,30 +22,30 @@ class ReaderService {
     };
 
     // Remove undefined fields
-    Object.keys(reader).forEach(
-      (key) => reader[key] === undefined && delete reader[key],
+    Object.keys(staff).forEach(
+      (key) => staff[key] === undefined && delete staff[key],
     );
-    return reader;
+    return staff;
   }
 
   async create(payload) {
-    const nextreaderid = await getNextSequenceValue(this.db, "readerid");
-    const reader = this.extractConactData(payload);
-    reader.readerid = nextreaderid;
-    if (reader.password) {
+    const nextstaffid = await getNextSequenceValue(this.db, "staffid");
+    const staff = this.extractConactData(payload);
+    staff.staffid = nextstaffid;
+    if (staff.password) {
       const saltRounds = 10; // Độ phức tạp của thuật toán băm mã hóa
-      reader.password = await bcrypt.hash(reader.password, saltRounds);
+      staff.password = await bcrypt.hash(staff.password, saltRounds);
       // Mật khẩu "123456" gõ vào sẽ biến thành chuỗi dạng "$2b$10$xyz..." cực kỳ an toàn trong DB
     }
-    const result = await this.reader.insertOne(reader);
+    const result = await this.staff.insertOne(staff);
     return {
       _id: result.insertedId,
-      ...reader,
+      ...staff,
     };
   }
 
   async find(filter) {
-    const cursor = await this.reader.find(filter);
+    const cursor = await this.staff.find(filter);
     return await cursor.toArray();
   }
 
@@ -63,7 +62,7 @@ class ReaderService {
   }
 
   async findById(id) {
-    return await this.reader.findOne({
+    return await this.staff.findOne({
       _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
     });
   }
@@ -73,7 +72,7 @@ class ReaderService {
       _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
     };
     const update = this.extractConactData(payload);
-    const result = await this.reader.findOneAndUpdate(
+    const result = await this.staff.findOneAndUpdate(
       filter,
       { $set: update },
       { returnDocument: "after" },
@@ -82,33 +81,33 @@ class ReaderService {
   }
 
   async delete(id) {
-    const result = await this.reader.findOneAndDelete({
+    const result = await this.staff.findOneAndDelete({
       _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
     });
     return result;
   }
 
   async deleteAll() {
-    const result = await this.reader.deleteMany({});
+    const result = await this.staff.deleteMany({});
     return result.deletedCount;
   }
 
   async login(gmail, password) {
     // 1. Tìm độc giả trong database dựa vào Gmail
-    // (Lưu ý: Bạn dùng this.reader hay this.collection thì sửa lại cho đúng nhé)
-    const reader = await this.reader.findOne({ gmail: gmail });
-    if (!reader) {
+    // (Lưu ý: Bạn dùng this.staff hay this.collection thì sửa lại cho đúng nhé)
+    const staff = await this.staff.findOne({ gmail: gmail });
+    if (!staff) {
       return null; // Không tìm thấy user
     }
     // 2. So sánh mật khẩu bằng bcrypt
-    const isMatch = await bcrypt.compare(password, reader.password);
+    const isMatch = await bcrypt.compare(password, staff.password);
     if (!isMatch) {
       return null; // Sai mật khẩu
     }
     // 3. Bảo mật: Xóa mật khẩu hash trước khi trả về
-    delete reader.password;
-    return reader; // Trả về thông tin user hợp lệ
+    delete staff.password;
+    return staff; // Trả về thông tin user hợp lệ
   }
 }
 
-module.exports = ReaderService;
+module.exports = StaffService;

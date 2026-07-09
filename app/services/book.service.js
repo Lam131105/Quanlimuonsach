@@ -1,37 +1,50 @@
 const { ObjectId } = require("mongodb");
-
+const { getNextSequenceValue } = require("../utils/sequence.util");
 class BookService {
   constructor(client) {
     this.book = client.db().collection("books");
+    this.db = client.db();
   }
 
-  // Định nghĩa các phương thức truy xuất CSDL sử dụng mongodb API
-  extractConactData(payload) {
+  extractBookData(payload) {
     const book = {
       name: payload.name,
       auth: payload.auth,
-      category: payload.category,
       description: payload.description,
       imgUrl: payload.imgUrl,
-      quantity: payload.quantity,
-      year: payload.year,
+
+      // 1. Chuyển đổi mảng chuỗi ID Thể loại thành mảng các ObjectId
+      categoryIds: payload.categoryIds
+        .map((id) => (ObjectId.isValid(id) ? new ObjectId(id) : null))
+        .filter((id) => id !== null), // Loại bỏ các ID không hợp lệ nếu có
+
+      // 2. Chuyển đổi ID Nhà xuất bản thành một ObjectId duy nhất
+      publisherId: ObjectId.isValid(payload.publisherId)
+        ? new ObjectId(payload.publisherId)
+        : null,
+
+      // Thêm các trường số lượng, năm nếu bạn mở khóa comment về sau
+      quantity: payload.quantity ? parseInt(payload.quantity) : 0,
+      year: payload.year ? parseInt(payload.year) : null,
     };
 
-    // Remove undefined fields
+    // Loại bỏ các trường undefined
     Object.keys(book).forEach(
       (key) => book[key] === undefined && delete book[key],
     );
     return book;
   }
-
   async create(payload) {
-    const book = this.extractConactData(payload);
-    const result = await this.book.findOneAndUpdate(
-      book, // Tham số 1: Bộ lọc (tìm xem sách này đã tồn tại chưa)
-      { $set: book }, // Tham số 2: Nếu chưa có hoặc có rồi thì cập nhật thông tin này vào
-      { returnDocument: "after", upsert: true }, // Tham số 3: Cấu hình tạo mới nếu chưa có
-    );
-    return result;
+    const nextbookid = await getNextSequenceValue(this.db, "bookid");
+
+    const book = this.extractBookData(payload);
+    book.bookid = nextbookid;
+
+    const result = await this.book.insertOne(book);
+    return {
+      _id: result.insertedId,
+      ...book,
+    };
   }
 
   async find(filter) {
@@ -55,12 +68,20 @@ class BookService {
     const filter = {
       _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
     };
-    const update = this.extractConactData(payload);
+
+    // 💡 ĐIỂM MẤT CHỐT: Đi qua hàm bóc tách extractBookData để ép kiểu
+    // mảng categoryIds và publisherId sang dạng ObjectId giống như lúc Thêm mới
+    const update = this.extractBookData(payload);
+
+    // Xóa trường _id ra khỏi object update nếu vô tình có, tránh lỗi sửa ID của MongoDB
+    delete update._id;
+
     const result = await this.book.findOneAndUpdate(
       filter,
       { $set: update },
-      { returnDocument: "after" },
+      { returnDocument: "after" }, // Trả về dữ liệu mới nhất sau khi sửa thành công
     );
+
     return result;
   }
 

@@ -7,8 +7,9 @@ const commonConfig = {
   },
 };
 
-class ReaderService {
-  constructor(baseUrl = "/api/readers") {
+class PublisherService {
+  // Chỉ khác chỗ này: Trỏ về đúng route của Nhà xuất bản
+  constructor(baseUrl = "/api/publishers") {
     this.api = axios.create({
       baseURL: baseUrl,
       ...commonConfig,
@@ -32,11 +33,6 @@ class ReaderService {
   async delete(id) {
     return (await this.api.delete(`/${id}`)).data;
   }
-
-  async login(data) {
-    // data gồm { gmail, password }
-    return (await this.api.post("/login", data)).data;
-  }
 }
 
-export default new ReaderService();
+export default new PublisherService();

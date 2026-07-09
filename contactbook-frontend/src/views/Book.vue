@@ -38,6 +38,7 @@
 </template>
 
 <script>
+// Giả sử bạn đổi tên file component từ InputSearch sang InputSearch cho hợp ngữ cảnh nhé
 import InputSearch from "@/components/InputSearch.vue";
 import BookList from "@/components/BookList.vue";
 import BookService from "@/services/book.service";
@@ -50,23 +51,43 @@ export default {
   data() {
     return {
       books: [],
-      searchText: "",
+      // Đã khởi tạo cấu trúc Object 3 trường chính xác
+      searchText: {
+        name: "",
+        publisherId: "",
+        categoryId: "",
+      },
     };
   },
   computed: {
+    // 💡 ĐÃ NÂNG CẤP: Bộ lọc thông minh kết hợp cả 3 điều kiện
     filteredBooks() {
-      if (!this.searchText) return this.books;
       return this.books.filter((book) => {
-        const nameMatch = book.name
-          ?.toLowerCase()
-          .includes(this.searchText.toLowerCase());
-        const authMatch = book.auth
-          ?.toLowerCase()
-          .includes(this.searchText.toLowerCase());
-        const cateMatch = book.category
-          ?.toLowerCase()
-          .includes(this.searchText.toLowerCase());
-        return nameMatch || authMatch || cateMatch;
+        // 1. Lọc theo Tên sách hoặc Tác giả (Gõ chữ)
+        // Nếu người dùng không gõ gì (chuỗi rỗng), mặc định xem như Thỏa mãn (true)
+        const matchText = this.searchText.name
+          ? book.name
+              ?.toLowerCase()
+              .includes(this.searchText.name.toLowerCase()) ||
+            book.auth
+              ?.toLowerCase()
+              .includes(this.searchText.name.toLowerCase())
+          : true;
+
+        // 2. Lọc theo Nhà xuất bản (Chọn Dropdown)
+        // Nếu chọn "-- Tất cả NXB --" (chuỗi rỗng), mặc định Thỏa mãn (true)
+        const matchPublisher = this.searchText.publisherId
+          ? book.publisherId === this.searchText.publisherId
+          : true;
+
+        // 3. Lọc theo Thể loại (Chọn Dropdown)
+        // Vì trong DB, một cuốn sách có MẢNG categoryIds, ta dùng .includes() để check xem ID đang chọn có nằm trong mảng đó không
+        const matchCategory = this.searchText.categoryId
+          ? book.categoryIds?.includes(this.searchText.categoryId)
+          : true;
+
+        // Cuốn sách nào thỏa mãn ĐỒNG THỜI cả 3 bộ lọc (dấu &&) thì mới được giữ lại hiển thị
+        return matchText && matchPublisher && matchCategory;
       });
     },
   },
@@ -78,12 +99,12 @@ export default {
         console.log(error);
       }
     },
+    // Khi bấm nút tìm kiếm, chỉ cần kích hoạt tải lại danh sách mới nhất từ server (nếu có thay đổi)
     async searchBooks() {
-      this.retrieveBooks();
+      await this.retrieveBooks();
     },
-    // ✅ HÀM CHUYỂN TRANG KHI CLICK VÀO SÁCH ✅
+    // HÀM CHUYỂN TRANG KHI CLICK VÀO SÁCH
     goToEditBook(id) {
-      // Chuyển hướng sang route có tên là 'bookdetail.vue' và truyền kèm ID của cuốn sách lên URL
       this.$router.push({ name: "bookdetail", params: { id: id } });
     },
   },

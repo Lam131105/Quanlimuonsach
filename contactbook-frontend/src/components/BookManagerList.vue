@@ -13,7 +13,7 @@
       </thead>
       <tbody>
         <tr v-for="(book, index) in books" :key="book._id">
-          <th scope="row" class="font-weight-bold">{{ index + 1 }}</th>
+          <th scope="row" class="font-weight-bold">{{ book.bookid }}</th>
 
           <td>
             <img

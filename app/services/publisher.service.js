@@ -1,8 +1,9 @@
 const { ObjectId } = require("mongodb");
-
+const { getNextSequenceValue } = require("../utils/sequence.util");
 class PublisherService {
   constructor(client) {
     this.publisher = client.db().collection("publishers");
+    this.db = client.db();
   }
 
   // Định nghĩa các phương thức truy xuất CSDL sử dụng mongodb API
@@ -20,13 +21,14 @@ class PublisherService {
   }
 
   async create(payload) {
+    const nextpublisherid = await getNextSequenceValue(this.db, "publisherid");
     const publisher = this.extractConactData(payload);
-    const result = await this.publisher.findOneAndUpdate(
-      publisher,
-      { $set: publisher },
-      { returnDocument: "after", upsert: true },
-    );
-    return result;
+    publisher.publisherid = nextpublisherid;
+    const result = await this.publisher.insertOne(publisher);
+    return {
+      _id: result.insertedId,
+      ...publisher,
+    };
   }
 
   async find(filter) {

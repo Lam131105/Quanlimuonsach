@@ -61,14 +61,76 @@
           </div>
 
           <div class="form-group">
-            <label for="category" class="font-weight-bold">
-              <i class="fas fa-tags text-muted mr-1"></i> Thể loại:
+            <label for="publisher" class="font-weight-bold">
+              <i class="fas fa-building text-muted mr-1"></i> Nhà xuất bản:
+            </label>
+            <select
+              id="publisher"
+              class="form-control"
+              v-model="localBook.publisherId"
+              required
+            >
+              <option value="" disabled selected>
+                -- Chọn nhà xuất bản --
+              </option>
+              <option v-for="pub in publishers" :key="pub._id" :value="pub._id">
+                {{ pub.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="font-weight-bold d-block">
+              <i class="fas fa-tags text-muted mr-1"></i> Thể loại sách (Chọn
+              nhiều):
+            </label>
+            <div
+              class="category-checkbox-container p-3 border rounded bg-white"
+            >
+              <div
+                v-for="cat in categories"
+                :key="cat._id"
+                class="form-check form-check-inline mb-2"
+              >
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  :id="'cat-' + cat._id"
+                  :value="cat._id"
+                  v-model="localBook.categoryIds"
+                />
+                <label class="form-check-label mr-3" :for="'cat-' + cat._id">
+                  {{ cat.name }}
+                </label>
+              </div>
+              <div v-if="categories.length === 0" class="text-muted small">
+                Đang tải dữ liệu thể loại...
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="auth" class="font-weight-bold">
+              <i class="fas fa-user-edit text-muted mr-1"></i> Số lượng:
             </label>
             <input
-              type="text"
-              id="category"
+              type="number"
+              id="auth"
               class="form-control"
-              v-model="localBook.category"
+              v-model="localBook.quantity"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="auth" class="font-weight-bold">
+              <i class="fas fa-user-edit text-muted mr-1"></i> Năm:
+            </label>
+            <input
+              type="number"
+              id="auth"
+              class="form-control"
+              v-model="localBook.year"
             />
           </div>
 
@@ -79,7 +141,7 @@
             <textarea
               id="description"
               class="form-control"
-              rows="4"
+              rows="3"
               v-model="localBook.description"
             ></textarea>
           </div>
@@ -115,6 +177,9 @@
 </template>
 
 <script>
+// Import 2 service bưu tá để lấy dữ liệu đổ vào form
+import CategoryService from "@/services/category.service";
+import PublisherService from "@/services/publisher.service";
 export default {
   props: {
     // Nhận object dữ liệu ban đầu
@@ -125,8 +190,14 @@ export default {
   emits: ["submit", "cancel", "delete"],
   data() {
     return {
-      // Sao chép props sang biến local để thoải mái dùng v-model mà không vi phạm nguyên tắc Vue
-      localBook: { ...this.book },
+      // Đảm bảo cấu trúc sách có mảng categoryIds và chuỗi publisherId ban đầu để tránh lỗi undefined
+      localBook: {
+        categoryIds: [],
+        publisherId: "",
+        ...this.book,
+      },
+      categories: [], // Danh sách thể loại lấy từ API
+      publishers: [], // Danh sách nhà xuất bản lấy từ API
       imageExists: true,
     };
   },
@@ -134,7 +205,11 @@ export default {
     // Cập nhật lại dữ liệu local nếu props từ ngoài truyền vào thay đổi đột ngột
     book: {
       handler(newVal) {
-        this.localBook = { ...newVal };
+        this.localBook = {
+          categoryIds: [],
+          publisherId: "",
+          ...newVal,
+        };
       },
       deep: true,
     },
@@ -143,6 +218,22 @@ export default {
     },
   },
   methods: {
+    // Hàm gọi API lấy danh sách Thể loại
+    async fetchCategories() {
+      try {
+        this.categories = await CategoryService.getAll();
+      } catch (error) {
+        console.error("Lỗi lấy danh sách thể loại:", error);
+      }
+    },
+    // Hàm gọi API lấy danh sách Nhà xuất bản
+    async fetchPublishers() {
+      try {
+        this.publishers = await PublisherService.getAll();
+      } catch (error) {
+        console.error("Lỗi lấy danh sách NXB:", error);
+      }
+    },
     getBookImage(imageName) {
       if (!imageName) return "";
       return new URL(`/src/assets/images/${imageName}`, import.meta.url).href;
@@ -150,6 +241,11 @@ export default {
     handleImageError() {
       this.imageExists = false;
     },
+  },
+  // Vừa vào form thì đi bốc dữ liệu từ DB về ngay
+  created() {
+    this.fetchCategories();
+    this.fetchPublishers();
   },
 };
 </script>

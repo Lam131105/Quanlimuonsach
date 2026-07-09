@@ -31,38 +31,63 @@
           <hr class="my-3" />
 
           <div class="info-row mb-3">
-            <span class="info-label text-muted">
-              <i class="fas fa-user-edit mr-2"></i><strong>Tác giả:</strong>
-            </span>
+            <label class="font-weight-bold">
+              <i class="fas fa-building text-muted mr-1"></i> Tác giả:
+            </label>
             <span class="info-value ml-2 text-dark font-weight-bold">
               {{ book.auth || "Chưa rõ tác giả" }}
             </span>
           </div>
 
-          <div class="info-row mb-3">
-            <span class="info-label text-muted">
-              <i class="fas fa-tags mr-2"></i><strong>Thể loại:</strong>
-            </span>
-            <span class="badge badge-lg badge-info p-2 ml-2">
-              {{ book.category || "Chưa phân loại" }}
-            </span>
-          </div>
-
-          <div class="info-row mb-3">
-            <span class="info-label text-muted">
-              <i class="fas fa-tags mr-2"></i><strong>Năm xuất bản:</strong>
-            </span>
-            <span class="text-muted">
-              {{ book.year || "Không rõ" }}
+          <div class="form-group">
+            <label class="font-weight-bold">
+              <i class="fas fa-building text-muted mr-1"></i> Nhà xuất bản:
+            </label>
+            <span class="info-value ml-2 text-dark">
+              {{
+                publishers.find((pub) => pub._id === book.publisherId)?.name ||
+                "Đang tải..."
+              }}
             </span>
           </div>
 
+          <div class="form-group">
+            <label class="font-weight-bold d-block">
+              <i class="fas fa-tags text-muted mr-1"></i> Thể loại sách:
+            </label>
+            <div class="p-1">
+              <span
+                v-for="catId in book.categoryIds"
+                :key="catId"
+                class="badge badge-info mr-2 px-3 py-2"
+                style="font-size: 14px; border-radius: 4px"
+              >
+                {{ categories.find((cat) => cat._id === catId)?.name || "..." }}
+              </span>
+
+              <span
+                v-if="!book.categoryIds || book.categoryIds.length === 0"
+                class="text-muted small"
+              >
+                Chưa phân loại
+              </span>
+            </div>
+          </div>
           <div class="info-row mb-3">
             <span class="info-label text-muted">
               <i class="fas fa-tags mr-2"></i><strong>Số lượng:</strong>
             </span>
             <span class="text-muted">
               {{ book.quantity || "Chưa phân loại" }}
+            </span>
+          </div>
+
+          <div class="info-row mb-3">
+            <span class="info-label text-muted">
+              <i class="fas fa-tags mr-2"></i><strong>Năm:</strong>
+            </span>
+            <span class="text-muted">
+              {{ book.year || "Chưa xác định" }}
             </span>
           </div>
 
@@ -104,6 +129,8 @@
 
 <script>
 import BookService from "@/services/book.service";
+import CategoryService from "@/services/category.service";
+import PublisherService from "@/services/publisher.service";
 
 export default {
   props: {
@@ -113,6 +140,8 @@ export default {
     return {
       book: null,
       imageExists: true,
+      categories: [], // Danh sách thể loại lấy từ API
+      publishers: [], // Danh sách nhà xuất bản lấy từ API
     };
   },
   methods: {
@@ -135,9 +164,28 @@ export default {
     handleImageError() {
       this.imageExists = false;
     },
+
+    async fetchCategories() {
+      try {
+        this.categories = await CategoryService.getAll();
+      } catch (error) {
+        console.error("Lỗi lấy danh sách thể loại:", error);
+      }
+    },
+    // Hàm gọi API lấy danh sách Nhà xuất bản
+    async fetchPublishers() {
+      try {
+        this.publishers = await PublisherService.getAll();
+      } catch (error) {
+        console.error("Lỗi lấy danh sách NXB:", error);
+      }
+    },
   },
+
   created() {
     this.getBook();
+    this.fetchCategories();
+    this.fetchPublishers();
   },
 };
 </script>

@@ -1,33 +1,35 @@
 const { ObjectId } = require("mongodb");
+const { getNextSequenceValue } = require("../utils/sequence.util");
 
 class CategoryService {
   constructor(client) {
-    // Đã trỏ đúng vào bảng categories
     this.category = client.db().collection("categories");
+    this.db = client.db();
   }
 
-  // Sửa lại hàm bóc tách: Tập trung đúng các trường của THỂ LOẠI (Name & Description)
   extractCategoryData(payload) {
     const category = {
       name: payload.name,
-      description: payload.description, // Sửa thành description thay vì address
+      description: payload.description,
     };
 
-    // Remove undefined fields
     Object.keys(category).forEach(
       (key) => category[key] === undefined && delete category[key],
     );
     return category;
   }
 
-  // Sửa lại hàm create bằng phương thức insertOne chuẩn chỉnh của MongoDB
   async create(payload) {
+    // 💡 ĐÃ SỬA: Đổi "categoryid" thành "categoryId" để khớp với switch-case trong file util
+    const nextcategoryid = await getNextSequenceValue(this.db, "categoryid");
+
+    // 💡 ĐÃ SỬA: Đổi chữ c viết thường thành C viết hoa (extractCategoryData) cho đúng tên hàm
     const category = this.extractCategoryData(payload);
 
-    // Sử dụng insertOne để thêm mới tinh một bản ghi, tránh lỗi logic của findOneAndUpdate
+    category.categoryid = nextcategoryid;
+
     const result = await this.category.insertOne(category);
 
-    // Trả về dữ liệu kèm theo _id vừa được sinh ra tự động
     return {
       _id: result.insertedId,
       ...category,

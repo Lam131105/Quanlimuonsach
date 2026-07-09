@@ -8,7 +8,7 @@ const commonConfig = {
 };
 
 class ReaderService {
-  constructor(baseUrl = "/api/readers") {
+  constructor(baseUrl = "/api/staffs") {
     this.api = axios.create({
       baseURL: baseUrl,
       ...commonConfig,
@@ -33,10 +33,10 @@ class ReaderService {
     return (await this.api.delete(`/${id}`)).data;
   }
 
-  async login(data) {
-    // data gồm { gmail, password }
-    return (await this.api.post("/login", data)).data;
-  }
+  // async login(data) {
+  //   // data gồm { gmail, password }
+  //   return (await this.api.post("/login", data)).data;
+  // }
 }
 
 export default new ReaderService();
