@@ -37,6 +37,9 @@ class ReaderService {
     // data gồm { gmail, password }
     return (await this.api.post("/login", data)).data;
   }
+  async updateStatus(id, isActive) {
+    return (await this.api.patch(`/${id}`, { isActive })).data;
+  }
 }
 
 export default new ReaderService();

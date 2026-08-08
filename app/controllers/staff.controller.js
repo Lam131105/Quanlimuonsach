@@ -1,4 +1,4 @@
-const StaffsService = require("../services/staff.service"); // Hãy chắc chắn tên file service của bạn là staff.service.js hoặc staffs.service.js
+const StaffService = require("../services/staff.service"); // Hãy chắc chắn tên file service của bạn là staff.service.js hoặc staffs.service.js
 const MongoDB = require("../utils/mongodb.util");
 const ApiError = require("../api-error");
 const bcrypt = require("bcrypt");
@@ -19,7 +19,7 @@ exports.create = async (req, res, next) => {
   }
 
   try {
-    const staffService = new StaffsService(MongoDB.client);
+    const staffService = new StaffService(MongoDB.client);
     const document = await staffService.create(req.body);
 
     // Bảo mật: Xóa trường password khỏi đối tượng trước khi phản hồi về Client
@@ -38,7 +38,7 @@ exports.findAll = async (req, res, next) => {
   let documents = [];
 
   try {
-    const staffService = new StaffsService(MongoDB.client);
+    const staffService = new StaffService(MongoDB.client);
     const { name } = req.query;
     if (name) {
       documents = await staffService.findByName(name);
@@ -63,10 +63,10 @@ exports.findAll = async (req, res, next) => {
 // Find a single staff with an id
 exports.findOne = async (req, res, next) => {
   try {
-    const staffService = new StaffsService(MongoDB.client);
+    const staffService = new StaffService(MongoDB.client);
     const document = await staffService.findById(req.params.id);
     if (!document) {
-      return next(new ApiError(404, "Staffs record not found"));
+      return next(new ApiError(404, "Staff record not found"));
     }
 
     // BẢO MẬT: Xóa trường password trước khi trả về dữ liệu cho Frontend
@@ -92,12 +92,12 @@ exports.update = async (req, res, next) => {
   }
 
   try {
-    const staffService = new StaffsService(MongoDB.client);
+    const staffService = new StaffService(MongoDB.client);
     const document = await staffService.update(req.params.id, req.body);
     if (!document) {
-      return next(new ApiError(404, "Staffs record not found"));
+      return next(new ApiError(404, "Staff record not found"));
     }
-    return res.send({ message: "Staffs record was updated successfully" });
+    return res.send({ message: "Staff record was updated successfully" });
   } catch (error) {
     return next(
       new ApiError(500, `Error updating staff record with id=${req.params.id}`),
@@ -108,12 +108,12 @@ exports.update = async (req, res, next) => {
 // Delete a staff with the specified id in the request
 exports.delete = async (req, res, next) => {
   try {
-    const staffService = new StaffsService(MongoDB.client);
+    const staffService = new StaffService(MongoDB.client);
     const document = await staffService.delete(req.params.id);
     if (!document) {
-      return next(new ApiError(404, "Staffs record not found"));
+      return next(new ApiError(404, "Staff record not found"));
     }
-    return res.send({ message: "Staffs record was deleted successfully" });
+    return res.send({ message: "Staff record was deleted successfully" });
   } catch (error) {
     return next(
       new ApiError(
@@ -127,7 +127,7 @@ exports.delete = async (req, res, next) => {
 // Delete all staffs from the database
 exports.deleteAll = async (_req, res, next) => {
   try {
-    const staffService = new StaffsService(MongoDB.client);
+    const staffService = new StaffService(MongoDB.client);
     const deletedCount = await staffService.deleteAll();
     return res.send({
       message: `${deletedCount} staff records were deleted successfully`,
@@ -147,7 +147,7 @@ exports.login = async (req, res, next) => {
     return next(new ApiError(400, "Gmail và mật khẩu không được để trống"));
   }
   try {
-    const staffService = new StaffsService(MongoDB.client);
+    const staffService = new StaffService(MongoDB.client);
     // 2. Gọi sang Service để xử lý logic xác thực
     const staff = await staffService.login(gmail, password);
     // Nếu Service trả về null (Nghĩa là sai gmail hoặc sai mật khẩu)
@@ -161,5 +161,37 @@ exports.login = async (req, res, next) => {
     });
   } catch (error) {
     return next(new ApiError(500, "Có lỗi xảy ra trong quá trình đăng nhập"));
+  }
+};
+
+exports.updateStatus = async (req, res, next) => {
+  // Kiểm tra xem Frontend/Postman có gửi trạng thái isActive lên không
+  if (req.body?.isActive === undefined) {
+    return next(new ApiError(400, "Trạng thái isActive không được để trống"));
+  }
+
+  try {
+    const staffService = new StaffService(MongoDB.client);
+    const document = await staffService.updateStatus(
+      req.params.id,
+      req.body.isActive,
+    );
+
+    if (!document) {
+      return next(new ApiError(404, "Không tìm thấy nhân viên với ID này"));
+    }
+
+    return res.send({
+      message: "Cập nhật trạng thái nhân viên thành công!",
+      data: document,
+    });
+  } catch (error) {
+    console.error("Lỗi cập nhật trạng thái nhân viên:", error);
+    return next(
+      new ApiError(
+        500,
+        `Có lỗi xảy ra khi cập nhật trạng thái nhân viên với id=${req.params.id}`,
+      ),
+    );
   }
 };

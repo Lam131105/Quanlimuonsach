@@ -166,3 +166,35 @@ exports.login = async (req, res, next) => {
     return next(new ApiError(500, "Có lỗi xảy ra trong quá trình đăng nhập"));
   }
 };
+
+exports.updateStatus = async (req, res, next) => {
+  // Kiểm tra xem Frontend/Postman có gửi trạng thái isActive lên không
+  if (req.body?.isActive === undefined) {
+    return next(new ApiError(400, "Trạng thái isActive không được để trống"));
+  }
+
+  try {
+    const readerService = new ReaderService(MongoDB.client);
+    const document = await readerService.updateStatus(
+      req.params.id,
+      req.body.isActive,
+    );
+
+    if (!document) {
+      return next(new ApiError(404, "Không tìm thấy khách hàng với ID này"));
+    }
+
+    return res.send({
+      message: "Cập nhật trạng thái khách hàng thành công!",
+      data: document,
+    });
+  } catch (error) {
+    console.error("Lỗi cập nhật trạng thái khách hàng:", error);
+    return next(
+      new ApiError(
+        500,
+        `Có lỗi xảy ra khi cập nhật trạng thái khách hàng với id=${req.params.id}`,
+      ),
+    );
+  }
+};

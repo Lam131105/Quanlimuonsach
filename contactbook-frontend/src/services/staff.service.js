@@ -32,6 +32,9 @@ class ReaderService {
   async delete(id) {
     return (await this.api.delete(`/${id}`)).data;
   }
+  async updateStatus(id, isActive) {
+    return (await this.api.patch(`/${id}`, { isActive })).data;
+  }
 
   // async login(data) {
   //   // data gồm { gmail, password }

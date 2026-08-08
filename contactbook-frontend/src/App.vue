@@ -39,7 +39,7 @@
               class="nav-link px-3 d-flex align-items-center"
               active-class="active"
             >
-              <i class="fas fa-cogs mr-1.5"></i> Quản lý danh mục sách
+              <i class="fas fa-cogs mr-1.5"></i> Quản lý sách
             </router-link>
           </li>
           <li class="nav-item">
@@ -48,7 +48,37 @@
               class="nav-link px-3 d-flex align-items-center"
               active-class="active"
             >
-              <i class="fas fa-cogs mr-1.5"></i> Quản lí thư viện
+              <i class="fas fa-cogs mr-1.5"></i> Quản lí thể loại sách
+            </router-link>
+          </li>
+
+          <li class="nav-item">
+            <router-link
+              :to="{ name: 'publishermanager' }"
+              class="nav-link px-3 d-flex align-items-center"
+              active-class="active"
+            >
+              <i class="fas fa-cogs mr-1.5"></i> Quản lí nhà xuất bản
+            </router-link>
+          </li>
+
+          <li class="nav-item">
+            <router-link
+              :to="{ name: 'staffmanager' }"
+              class="nav-link px-3 d-flex align-items-center"
+              active-class="active"
+            >
+              <i class="fas fa-cogs mr-1.5"></i> Quản lí nhân viên
+            </router-link>
+          </li>
+
+          <li class="nav-item">
+            <router-link
+              :to="{ name: 'readermanager' }"
+              class="nav-link px-3 d-flex align-items-center"
+              active-class="active"
+            >
+              <i class="fas fa-cogs mr-1.5"></i> Quản lí người đọc
             </router-link>
           </li>
         </ul>

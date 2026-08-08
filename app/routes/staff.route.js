@@ -12,7 +12,8 @@ router
   .route("/:id")
   .get(staffs.findOne)
   .put(staffs.update)
-  .delete(staffs.delete);
+  .delete(staffs.delete)
+  .patch(staffs.updateStatus);
 router.post("/login", staffs.login);
 
 module.exports = router;

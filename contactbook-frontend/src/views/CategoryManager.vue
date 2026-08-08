@@ -1,40 +1,103 @@
 <template>
   <div class="container mt-3">
+    <!-- Tiêu đề trang -->
     <div class="row">
-      <div class="col-md-12">
-        <h4 class="text-center text-secondary mb-4">
-          <i class="fas fa-tags"></i> HỆ THỐNG QUẢN LÝ THỂ LOẠI SÁCH
+      <div class="col-12">
+        <h4 class="text-center text-danger mb-4 font-weight-bold">
+          <i class="fas fa-tags"></i> HỆ THỐNG QUẢN TRỊ THỂ LOẠI
         </h4>
       </div>
     </div>
 
+    <!-- Thanh công cụ: Tìm kiếm và các nút Thêm / Xóa tất cả -->
     <div class="row">
-      <div class="col-md-7">
-        <div class="mb-3">
-          <InputSearch v-model="searchText" @submit="searchCategories" />
-        </div>
-
-        <h5 class="mt-4">
-          <i class="fas fa-list-ul"></i> Danh sách thể loại hiện có
-        </h5>
-
-        <CategoryList
-          v-if="filteredCategories.length > 0"
-          :categories="filteredCategories"
-          v-model:activeIndex="activeIndex"
-        />
-        <p v-else class="text-muted mt-3">Không tìm thấy thể loại sách nào.</p>
-      </div>
-
-      <div class="col-md-5">
-        <div v-if="activeCategory">
-          <h5 class="text-info">
-            <i class="fas fa-info-circle"></i> Chi tiết thể loại
-          </h5>
-          <div class="card p-3 shadow-sm bg-light">
-            <CategoryCard :category="activeCategory" />
+      <div class="col-12 mb-4">
+        <div
+          class="d-flex flex-wrap justify-content-between align-items-center mb-4 bg-light p-3 rounded shadow-sm"
+        >
+          <div
+            class="search-box-wrapper w-100 max-w-md mb-2 mb-md-0"
+            style="max-width: 400px"
+          >
+            <!-- Sử dụng lại InputSearch giống bên quản lý sách -->
+            <InputSearch
+              v-model="searchText"
+              @submit="searchCategories"
+              placeholder="Tìm tên thể loại, mô tả..."
+            />
+          </div>
+          <div>
+            <button
+              class="btn btn-success font-weight-bold shadow-sm mr-2"
+              @click="goToAddCategory"
+            >
+              <i class="fas fa-plus-circle"></i> Thêm thể loại mới
+            </button>
+            <button
+              class="btn btn-outline-danger font-weight-bold shadow-sm"
+              @click="removeAllCategories"
+            >
+              <i class="fas fa-trash-alt"></i> Xóa tất cả
+            </button>
           </div>
         </div>
+
+        <!-- Bảng hiển thị danh sách chi tiết (Hiển thị luôn thông tin ra ngoài) -->
+        <h5 class="mb-3 font-weight-bold text-dark">
+          <i class="fas fa-table"></i> Danh sách quản lý chi tiết
+        </h5>
+
+        <div
+          v-if="filteredCategories.length > 0"
+          class="table-responsive bg-white rounded shadow-sm p-3 border"
+        >
+          <table class="table table-hover table-striped mb-0">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col" style="width: 15%">Mã thể loại</th>
+                <th scope="col" style="width: 25%">Tên thể loại</th>
+                <th scope="col" style="width: 40%">Mô tả / Ghi chú</th>
+                <th scope="col" style="width: 20%" class="text-center">
+                  Hành động
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="category in filteredCategories" :key="category._id">
+                <td>
+                  <span class="badge badge-secondary px-2 py-1">{{
+                    category.categoryid
+                  }}</span>
+                </td>
+                <td class="font-weight-bold text-dark">{{ category.name }}</td>
+                <td class="text-muted small" style="white-space: pre-line">
+                  {{
+                    category.description || "Không có mô tả cho thể loại này."
+                  }}
+                </td>
+                <td class="text-center">
+                  <button
+                    class="btn btn-sm btn-warning mr-2 font-weight-bold text-white shadow-sm"
+                    @click="goToEditCategory(category._id)"
+                  >
+                    <i class="fas fa-edit"></i> Sửa
+                  </button>
+                  <button
+                    class="btn btn-sm btn-danger font-weight-bold shadow-sm"
+                    @click="deleteCategory(category._id)"
+                  >
+                    <i class="fas fa-trash-alt"></i> Xóa
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Thông báo nếu không tìm thấy dữ liệu -->
+        <p v-else class="text-muted mt-3 text-center py-4 bg-light rounded">
+          Không tìm thấy thể loại nào thỏa mãn điều kiện.
+        </p>
       </div>
     </div>
   </div>
@@ -42,35 +105,23 @@
 
 <script>
 import InputSearch from "@/components/InputSearch.vue";
-import CategoryList from "@/components/CategoryList.vue";
-import CategoryCard from "@/components/CategoryCard.vue";
-import CategoryService from "@/services/category.service";
+import CategoryService from "@/services/category.service"; // Giả định bạn đã có file này
 
 export default {
   components: {
     InputSearch,
-    CategoryList,
-    CategoryCard,
   },
   data() {
     return {
-      categories: [], // Lưu danh sách tất cả thể loại tải từ backend về
-      searchText: "",
-      activeIndex: -1, // Lưu vị trí dòng đang được chọn trong danh sách
+      categories: [], // Mảng chứa danh sách thể loại lấy từ Backend
+      searchText: "", // Từ khóa tìm kiếm
     };
   },
-  watch: {
-    // Giám sát ô tìm kiếm, nếu thay đổi chữ gõ vào thì xóa mục đang chọn tránh bị lệch index
-    searchText() {
-      this.activeIndex = -1;
-    },
-  },
   computed: {
-    // Lọc danh sách thể loại dựa trên chuỗi tìm kiếm searchText
+    // Bộ lọc thể loại Real-time dựa trên Tên hoặc Mô tả
     filteredCategories() {
       if (!this.searchText) return this.categories;
       return this.categories.filter((cat) => {
-        // Tìm kiếm không phân biệt chữ hoa chữ thường theo Tên thể loại hoặc Mô tả thể loại
         const nameMatch = cat.name
           ?.toLowerCase()
           .includes(this.searchText.toLowerCase());
@@ -80,37 +131,68 @@ export default {
         return nameMatch || descMatch;
       });
     },
-    // Trả về đối tượng thể loại cụ thể đang được người dùng click chọn
-    activeCategory() {
-      if (this.activeIndex < 0) return null;
-      return this.filteredCategories[this.activeIndex];
-    },
   },
   methods: {
-    // Hàm gọi API lấy tất cả thể loại từ backend
+    // Hàm bốc dữ liệu từ API Backend về
     async retrieveCategories() {
       try {
         this.categories = await CategoryService.getAll();
       } catch (error) {
-        console.log(error);
+        console.log("Lỗi lấy danh sách thể loại:", error);
       }
     },
-    // Hàm xử lý tải lại danh sách thể loại mới nhất khi bấm nút tìm kiếm
+    // Hàm kích hoạt khi nhấn Enter hoặc nút tìm kiếm
     async searchCategories() {
-      try {
-        this.activeIndex = -1;
-        this.categories = await CategoryService.getAll();
-      } catch (error) {
-        console.log(error);
+      this.retrieveCategories();
+    },
+
+    // --- CÁC HÀM XỬ LÝ SỰ KIỆN NÚT BẤM (Đã tạo trước logic điều hướng / xác nhận giống Book.vue) ---
+    goToAddCategory() {
+      this.$router.push({ name: "categoryadd" });
+    },
+    goToEditCategory(id) {
+      this.$router.push({ name: "categoryedit", params: { id: id } });
+    },
+
+    async deleteCategory(id) {
+      if (confirm("Bạn có chắc chắn muốn XÓA thể loại này khỏi hệ thống?")) {
+        try {
+          await CategoryService.delete(id); // Gọi API xóa
+          alert("Xóa thể loại thành công!");
+
+          // 💡 DÒNG QUAN TRỌNG: Gọi lại hàm này để load lại danh sách mới
+          await this.retrieveCategories();
+        } catch (error) {
+          console.log(error);
+        }
       }
     },
-    // goToAddCategory() {
-    //   this.$router.push({ name: "category.add" });
-    // },
+
+    async removeAllCategories() {
+      if (confirm("CẢNH BÁO: Bạn có chắc chắn muốn xóa TOÀN BỘ thể loại?")) {
+        try {
+          await CategoryService.deleteAll(); // Gọi API xóa sạch
+          alert("Đã xóa sạch toàn bộ thể loại!");
+
+          // 💡 DÒNG QUAN TRỌNG: Gọi lại để danh sách trống trơn ngay lập tức
+          await this.retrieveCategories();
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    },
   },
-  // Khi component được gắn vào DOM, tự động kéo dữ liệu thể loại lên giao diện ngay lập tức
+  // Vừa vào trang thì tự động load dữ liệu ngay
   mounted() {
     this.retrieveCategories();
   },
 };
 </script>
+
+<style scoped>
+/* Bạn có thể thêm CSS tùy chỉnh tại đây nếu cần */
+.table th,
+.table td {
+  vertical-align: middle; /* Căn giữa nội dung theo chiều dọc */
+}
+</style>

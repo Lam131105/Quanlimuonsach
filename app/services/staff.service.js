@@ -19,6 +19,7 @@ class StaffService {
       address: payload.address,
       phone: payload.phone,
       password: payload.password,
+      isActive: payload.isActive || true,
     };
 
     // Remove undefined fields
@@ -107,6 +108,23 @@ class StaffService {
     // 3. Bảo mật: Xóa mật khẩu hash trước khi trả về
     delete staff.password;
     return staff; // Trả về thông tin user hợp lệ
+  }
+
+  async updateStatus(id, isActive) {
+    const filter = {
+      _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
+    };
+
+    // Đảm bảo giá trị isActive truyền vào ép buộc về kiểu Boolean (true/false)
+    const statusValue = isActive === true || isActive === "true";
+
+    const result = await this.staff.findOneAndUpdate(
+      filter,
+      { $set: { isActive: statusValue } },
+      { returnDocument: "after" }, // Trả về thông tin nhân viên mới nhất sau khi đổi trạng thái
+    );
+
+    return result;
   }
 }
 

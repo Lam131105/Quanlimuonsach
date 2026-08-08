@@ -12,7 +12,8 @@ router
   .route("/:id")
   .get(readers.findOne)
   .put(readers.update)
-  .delete(readers.delete);
+  .delete(readers.delete)
+  .patch(readers.updateStatus);
 router.post("/login", readers.login);
 
 module.exports = router;

@@ -3,7 +3,7 @@
     <div class="row">
       <div class="col-12">
         <h4 class="text-center text-danger mb-4 font-weight-bold">
-          <i class="fas fa-cogs"></i> HỆ THỐNG QUẢN TRỊ DANH MỤC SÁCH
+          <i class="fas fa-cogs"></i> HỆ THỐNG QUẢN TRỊ SÁCH
         </h4>
       </div>
     </div>
