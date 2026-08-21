@@ -7,7 +7,7 @@
           <th scope="col" style="width: 12%">Ảnh bìa</th>
           <th scope="col" style="width: 30%">Tên cuốn sách</th>
           <th scope="col" style="width: 20%">Tác giả</th>
-          <th scope="col" style="width: 15%">Thể loại</th>
+          <th scope="col" style="width: 15%">Số lượng</th>
           <th scope="col" style="width: 18%" class="text-center">Hành động</th>
         </tr>
       </thead>
@@ -37,7 +37,7 @@
 
           <td>
             <span class="badge badge-secondary p-2">{{
-              book.category || "N/A"
+              book.quantity
             }}</span>
           </td>
 

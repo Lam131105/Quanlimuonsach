@@ -105,10 +105,14 @@ class StaffService {
     if (!isMatch) {
       return null; // Sai mật khẩu
     }
+    if (staff.isActive === false) {
+      return "ACCOUNT_LOCKED"; // Trả về nhãn đánh dấu tài khoản bị khóa
+    }
     // 3. Bảo mật: Xóa mật khẩu hash trước khi trả về
     delete staff.password;
     return staff; // Trả về thông tin user hợp lệ
   }
+
 
   async updateStatus(id, isActive) {
     const filter = {

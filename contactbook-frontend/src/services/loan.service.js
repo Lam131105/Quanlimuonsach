@@ -20,17 +20,26 @@ class LoanService {
   async create(data) {
     return (await this.api.post("/", data)).data;
   }
-  async deleteAll() {
-    return (await this.api.delete("/")).data;
-  }
   async get(id) {
     return (await this.api.get(`/${id}`)).data;
   }
   async update(id, data) {
     return (await this.api.put(`/${id}`, data)).data;
   }
+
+  async approve(id, data) {
+    return (await this.api.patch(`/${id}/approve`, data)).data;
+  }
+
+  async processReturn(id, data) {
+    return (await this.api.patch(`/${id}/return`, data)).data;
+  }
+
   async delete(id) {
     return (await this.api.delete(`/${id}`)).data;
+  }
+  async findByReader(id) {
+    return (await this.api.get(`/reader/${id}`)).data;
   }
 }
 

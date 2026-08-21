@@ -30,20 +30,22 @@ export default {
         categoryIds: [], // Khởi tạo mảng trống để lưu các ID thể loại được tích chọn
         publisherId: "",
         description: "",
-        imgUrl: "",
+        image: "",
       },
     };
   },
   methods: {
     // Hàm xử lý gửi dữ liệu sách mới lên Backend để lưu vào MongoDB
-    async createBook(data) {
+    // Bên trong file BookAdd.vue
+    async createBook(formData) {
+      // data nhận được lúc này chính là formData từ con gửi lên
       try {
-        await BookService.create(data);
+        await BookService.create(formData); // Gọi service gửi thẳng cục formData này đi
         alert("Thêm sách mới thành công!");
-        this.goBack(); // Thêm xong tự động quay về trang quản lý bảng sách
+        this.goBack();
       } catch (error) {
         console.log(error);
-        alert("Có lỗi xảy ra khi thêm sách mới. Vui lòng kiểm tra lại!");
+        alert("Có lỗi xảy ra khi thêm sách mới.");
       }
     },
     // Quay lại trang quản lý danh mục sách của Admin

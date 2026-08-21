@@ -12,7 +12,11 @@
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "mongodb": "^7.3.0"
+    "mongodb": "^7.3.0",
+    "multer": "^2.2.0",
+    "node-cron": "^4.6.0",
+    "v-money": "^0.8.1",
+    "v-money3": "^3.26.1"
   },
   "devDependencies": {
     "eslint": "^10.5.0",

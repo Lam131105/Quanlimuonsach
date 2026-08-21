@@ -150,6 +150,15 @@ exports.login = async (req, res, next) => {
     const staffService = new StaffService(MongoDB.client);
     // 2. Gọi sang Service để xử lý logic xác thực
     const staff = await staffService.login(gmail, password);
+
+        if (staff === "ACCOUNT_LOCKED") {
+          return next(
+            new ApiError(
+              403,
+              "Tài khoản của bạn đã bị khóa hoặc chưa được kích hoạt. Vui lòng liên hệ thủ thư để được hỗ trợ!",
+            ),
+          );
+        }
     // Nếu Service trả về null (Nghĩa là sai gmail hoặc sai mật khẩu)
     if (!staff) {
       return next(new ApiError(401, "Gmail hoặc mật khẩu không chính xác"));
@@ -163,6 +172,9 @@ exports.login = async (req, res, next) => {
     return next(new ApiError(500, "Có lỗi xảy ra trong quá trình đăng nhập"));
   }
 };
+
+
+
 
 exports.updateStatus = async (req, res, next) => {
   // Kiểm tra xem Frontend/Postman có gửi trạng thái isActive lên không

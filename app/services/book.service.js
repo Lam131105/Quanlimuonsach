@@ -3,7 +3,9 @@ const { getNextSequenceValue } = require("../utils/sequence.util");
 class BookService {
   constructor(client) {
     this.book = client.db().collection("books");
+
     this.db = client.db();
+    this.loan = client.db().collection("loans");
   }
 
   extractBookData(payload) {
@@ -25,6 +27,7 @@ class BookService {
 
       // Thêm các trường số lượng, năm nếu bạn mở khóa comment về sau
       quantity: payload.quantity ? parseInt(payload.quantity) : 0,
+      price: payload.price ? parseInt(payload.price) : 0,
       year: payload.year ? parseInt(payload.year) : null,
     };
 
@@ -86,10 +89,26 @@ class BookService {
   }
 
   async delete(id) {
-    const result = await this.book.findOneAndDelete({
-      _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
+    // 1. Ép kiểu id sang ObjectId một cách chắc chắn
+    const bookObjectId = ObjectId.isValid(id) ? new ObjectId(id) : null;
+    if (!bookObjectId) return null;
+
+    // 2. Kiểm tra chéo bằng cả 2 cách (Đề phòng trường hợp trong DB lưu chuỗi dài hoặc ObjectId dài)
+    // Hệ thống sẽ tìm xem có phiếu mượn nào chứa bookid bằng ObjectId HOẶC bằng chuỗi String dài không
+    const hasLoan = await this.loan.findOne({
+      $or: [{ bookid: bookObjectId }, { bookid: id }],
     });
-    return result;
+
+    // 3. Nếu tìm thấy dữ liệu trong bảng loans -> Chặn ngay lập tức
+    if (hasLoan) {
+      return "HAS_LOAN_RECORD";
+    }
+
+    // 4. Tiến hành xóa sách và trả về kết quả chuẩn của MongoDB Driver
+    const result = await this.book.findOneAndDelete({ _id: bookObjectId });
+
+    // Tùy phiên bản mongodb driver, kết quả có thể nằm ở result hoặc result.value
+    return result.value ? result.value : result;
   }
 
   async deleteAll() {

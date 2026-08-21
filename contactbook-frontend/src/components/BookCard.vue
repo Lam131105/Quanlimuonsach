@@ -53,17 +53,10 @@ export default {
     },
   },
   methods: {
-    // ✅ HÀM QUAN TRỌNG ĐỂ LẤY ẢNH TỪ THƯ MỤC ASSETS ✅
+    
     getBookImage(imageName) {
-      // imagePath sẽ có dạng: /src/assets/imgbook/ten-anh.jpg
       const imagePath = `/src/assets/imgbook/${imageName}`;
-
-      // Sử dụng cơ chế new URL của Vite để biên dịch đường dẫn thành URL hợp lệ
-      // (Bắt buộc phải truyền đường dẫn cứng vào new URL, không dùng biến cộng chuỗi ở đây)
-      // Vite sẽ tự động tìm ảnh theo cấu trúc tên bạn đặt
       try {
-        // Chúng ta lợi dụng việc dynamic import để kiểm tra đường dẫn ảnh
-        // (Đây là cách chuẩn của Vite dành cho dynamic assets)
         return new URL(imagePath, import.meta.url).href;
       } catch (error) {
         // Nếu không tìm thấy đường dẫn ảnh, trả về chuỗi rỗng

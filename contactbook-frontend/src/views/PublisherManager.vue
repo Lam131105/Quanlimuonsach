@@ -12,20 +12,14 @@
     <!-- Thanh công cụ: Ô tìm kiếm và Các nút chức năng chính -->
     <div class="row">
       <div class="col-12 mb-4">
-        <div
-          class="d-flex flex-wrap justify-content-between align-items-center mb-4 bg-light p-3 rounded shadow-sm"
-        >
-          <div
-            class="search-box-wrapper w-100 max-w-md mb-2 mb-md-0"
-            style="max-width: 400px"
-          >
-            <!-- Tái sử dụng ô tìm kiếm chung của dự án -->
-            <InputSearch
-              v-model="searchText"
-              @submit="searchPublishers"
-              placeholder="Tìm tên NXB, địa chỉ..."
-            />
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 bg-light p-3 rounded shadow-sm">
+          
+          <!-- Thanh tìm kiếm NXB -->
+          <div class="search-box-wrapper w-100 mb-3 mb-md-0" style="max-width: 500px">
+            <PublisherSearch v-model="filter" @submit="searchPublishers" />
           </div>
+
+          <!-- Các nút thao tác thêm/xóa -->
           <div>
             <button
               class="btn btn-success font-weight-bold shadow-sm mr-2"
@@ -65,9 +59,9 @@
             <tbody>
               <tr v-for="pub in filteredPublishers" :key="pub._id">
                 <td>
-                  <span class="badge badge-secondary px-2 py-1">{{
-                    pub.publisherid
-                  }}</span>
+                  <span class="badge badge-secondary px-2 py-1">
+                    {{ pub.publisherid }}
+                  </span>
                 </td>
                 <td class="font-weight-bold text-dark">{{ pub.name }}</td>
                 <td class="text-muted small">
@@ -102,31 +96,30 @@
 </template>
 
 <script>
-import InputSearch from "@/components/InputSearch.vue";
 import PublisherService from "@/services/publisher.service"; // File service frontend của bạn
-
+import PublisherSearch from "@/components/PublisherSearch.vue";
 export default {
   components: {
-    InputSearch,
+    PublisherSearch,
   },
   data() {
     return {
       publishers: [], // Mảng hứng danh sách NXB từ DB về
-      searchText: "", // Chuỗi lưu từ khóa tìm kiếm
+      filter: {
+        name: "", // Chuỗi từ khóa tìm kiếm
+      },
     };
   },
   computed: {
     // Bộ lọc Real-time tìm kiếm theo cả Tên NXB và Địa chỉ
-    filteredPublishers() {
-      if (!this.searchText) return this.publishers;
+filteredPublishers() {
+      const searchKeyword = this.filter.name ? this.filter.name.trim().toLowerCase() : "";
+      if (!searchKeyword) return this.publishers;
+
       return this.publishers.filter((pub) => {
-        const nameMatch = pub.name
-          ?.toLowerCase()
-          .includes(this.searchText.toLowerCase());
-        const addressMatch = pub.address
-          ?.toLowerCase()
-          .includes(this.searchText.toLowerCase());
-        return nameMatch || addressMatch;
+        const nameMatch = pub.name?.toLowerCase().includes(searchKeyword);
+        const addressMatch = pub.address?.toLowerCase().includes(searchKeyword);
+        return nameMatch || addressMatch; // Tìm trúng tên hoặc trúng địa chỉ đều được
       });
     },
   },
@@ -140,8 +133,8 @@ export default {
       }
     },
     // Chạy lại hàm load dữ liệu khi bấm nút tìm kiếm
-    searchPublishers() {
-      this.retrievePublishers();
+    async searchPublishers() {
+      await this.retrievePublishers();
     },
 
     // --- CÁC HÀM ĐỢI SẴN GIAO DIỆN NÚT BẤM THEO YÊU CẦU ---

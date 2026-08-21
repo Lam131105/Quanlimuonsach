@@ -4,39 +4,63 @@ const ApiError = require("../api-error");
 
 // Tạo và Lưu một cuốn sách mới
 exports.create = async (req, res, next) => {
-  // Kiểm tra các trường bắt buộc mới (Sách cần có mảng thể loại và id NXB)
-  if (
-    !req.body?.name ||
-    !req.body?.year ||
-    !req.body?.description ||
-    !req.body?.categoryIds || // Mảng ID Thể loại từ Frontend gửi lên
-    !req.body?.publisherId || // ID Nhà xuất bản từ Frontend gửi lên
-    !req.body?.imgUrl
-  ) {
-    return next(
-      new ApiError(
-        400,
-        "Thông tin sách (Tên, Tác giả, Thể loại, Nhà xuất bản, Ảnh) không được để trống",
-      ),
-    );
+  if (!req.file) {
+    return res
+      .status(400)
+      .json({ message: "Vui lòng upload hình ảnh cho sách" });
   }
-
-  // Đảm bảo categoryIds gửi lên phải là một mảng
-  if (!Array.isArray(req.body.categoryIds)) {
-    return next(
-      new ApiError(400, "Danh sách thể loại (categoryIds) phải là một mảng []"),
-    );
+  if (!req.body.name || !req.body.price) {
+    return res
+      .status(400)
+      .json({ message: "Thông tin sách không được để trống" });
   }
 
   try {
+    // 1. Lấy mảng categoryIds từ FormData gửi lên (thử cả 2 trường hợp có [] và không có [])
+    let rawCategories = req.body.categoryIds || req.body["categoryIds[]"] || [];
+
+    // 2. Chuẩn hóa dữ liệu mảng (nếu là chuỗi JSON thì parse, nếu là chuỗi đơn thì bọc thành mảng)
+    let finalCategories = [];
+    if (typeof rawCategories === "string") {
+      try {
+        finalCategories = JSON.parse(rawCategories);
+      } catch (e) {
+        finalCategories = [rawCategories]; // Trường hợp chỉ chọn 1 thể loại, nó truyền sang dạng chuỗi thô
+      }
+    } else {
+      finalCategories = rawCategories;
+    }
+
+    // 3. Đóng gói dữ liệu chuẩn chỉnh theo đúng Schema MongoDB của bạn
+    const bookData = {
+      name: req.body.name,
+      auth: req.body.auth,
+      publisherId: req.body.publisherId,
+      year: req.body.year ? Number(req.body.year) : undefined,
+      price: Number(req.body.price),
+      quantity: Number(req.body.quantity),
+      imgUrl: req.file.filename,
+      categoryIds: finalCategories, // Gán mảng đã chuẩn hóa sạch sẽ vào đây
+      description: req.body.description,
+    };
+
+    // 4. Lưu vào Database
     const bookService = new BookService(MongoDB.client);
-    const document = await bookService.create(req.body);
-    return res.send(document);
+    const document = await bookService.create(bookData);
+
+    return res
+      .status(201)
+      .json({ message: "Thêm sách thành công", data: document });
   } catch (error) {
-    console.error("Lỗi tạo sách:", error);
-    return next(
-      new ApiError(500, "Có lỗi xảy ra trong quá trình tạo sách mới"),
-    );
+    // ĐOẠN NÀY RẤT QUAN TRỌNG: In lỗi thực tế ra Terminal Backend để biết MongoDB đang chê cụ thể trường nào
+    console.error("====== LỖI TẠI BACKEND CONTROLLER ======");
+    console.error(error);
+    console.error("========================================");
+
+    return res.status(500).json({
+      message: "Có lỗi xảy ra khi lưu vào database",
+      error: error.message,
+    });
   }
 };
 
@@ -82,21 +106,32 @@ exports.findOne = async (req, res, next) => {
 
 // Update a book by the id in the request
 exports.update = async (req, res, next) => {
-  if (Object.keys(req.body).length === 0) {
-    return next(new ApiError(400, "Data to update cannot be empty"));
+  // 1. Kiểm tra dữ liệu rỗng
+  if (Object.keys(req.body).length === 0 && !req.file) {
+    return next(new ApiError(400, "Dữ liệu cập nhật không được để trống"));
   }
 
   try {
     const bookService = new BookService(MongoDB.client);
-    const document = await bookService.update(req.params.id, req.body);
-    if (!document) {
-      return next(new ApiError(404, "Book record not found"));
+    const updateData = { ...req.body };
+
+    // 2. Chuyển đổi categoryIds từ chuỗi FormData về mảng []
+    if (typeof updateData.categoryIds === "string") {
+      updateData.categoryIds = JSON.parse(updateData.categoryIds);
     }
-    return res.send({ message: "Book record was updated successfully" });
+
+    // 3. Nếu có ảnh mới thì cập nhật tên file, không có thì bỏ qua (giữ ảnh cũ)
+    if (req.file) {
+      updateData.imgUrl = req.file.filename;
+    }
+
+    // 4. Cập nhật vào DB
+    const document = await bookService.update(req.params.id, updateData);
+    if (!document) return next(new ApiError(404, "Không tìm thấy sách"));
+
+    return res.send({ message: "Cập nhật sách thành công!" });
   } catch (error) {
-    return next(
-      new ApiError(500, `Error updating book record with id=${req.params.id}`),
-    );
+    return next(new ApiError(500, `Lỗi khi cập nhật sách id=${req.params.id}`));
   }
 };
 
@@ -105,9 +140,21 @@ exports.delete = async (req, res, next) => {
   try {
     const bookService = new BookService(MongoDB.client);
     const document = await bookService.delete(req.params.id);
+
+    // 🚨 BẮT BUỘC: Phải check điều kiện này TRƯỚC KHI check !document
+    if (document === "HAS_LOAN_RECORD") {
+      return next(
+        new ApiError(
+          400,
+          "Không thể xóa! Sách này hiện đang có dữ liệu trong danh sách Quản lý mượn - trả.",
+        ),
+      );
+    }
+
     if (!document) {
       return next(new ApiError(404, "Book record not found"));
     }
+
     return res.send({ message: "Book record was deleted successfully" });
   } catch (error) {
     return next(

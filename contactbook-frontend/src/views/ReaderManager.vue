@@ -12,18 +12,12 @@
     <!-- Thanh công cụ: Chỉ giữ lại ô tìm kiếm Real-time -->
     <div class="row">
       <div class="col-12 mb-4">
-        <div class="bg-light p-3 rounded shadow-sm mb-4">
           <div
-            class="search-box-wrapper w-100 max-w-md"
-            style="max-width: 400px"
+            class="search-box-wrapper w-100 mb-3 mb-md-0"
+            style="max-width: 500px"
           >
-            <InputSearch
-              v-model="searchText"
-              @submit="searchReaders"
-              placeholder="Tìm tên độc giả, số điện thoại, gmail..."
-            />
+            <ReaderSearch v-model="filter" @submit="searchReaders" />
           </div>
-        </div>
 
         <!-- Bảng hiển thị danh sách Độc giả -->
         <h5 class="mb-3 font-weight-bold text-dark">
@@ -124,32 +118,36 @@
 </template>
 
 <script>
-import InputSearch from "@/components/InputSearch.vue";
 import ReaderService from "@/services/reader.service"; // File service frontend của bạn
+import ReaderSearch from "@/components/ReaderSearch.vue"; 
 
 export default {
   components: {
-    InputSearch,
+    ReaderSearch,
   },
   data() {
     return {
       readers: [], // Mảng chứa toàn bộ độc giả
-      searchText: "", // Từ khóa tìm kiếm
+      filter: {
+        name: "", // Từ khóa tìm kiếm gõ từ file con
+      },
     };
   },
   computed: {
     // Bộ lọc Real-time tìm theo Tên, Gmail, Số điện thoại
     filteredReaders() {
-      if (!this.searchText) return this.readers;
-      return this.readers.filter((reader) => {
-        const fullName = `${reader.lastName} ${reader.firstName}`.toLowerCase();
-        const search = this.searchText.toLowerCase();
+      const searchKeyword = this.filter.name
+        ? this.filter.name.trim().toLowerCase()
+        : "";
+      if (!searchKeyword) return this.readers;
 
-        return (
-          fullName.includes(search) ||
-          reader.gmail?.toLowerCase().includes(search) ||
-          reader.phone?.includes(search)
-        );
+      return this.readers.filter((reader) => {
+        const nameMatch = reader.firstName
+          ?.toLowerCase()
+          .includes(searchKeyword);
+        const emailMatch = reader.gmail?.toLowerCase().includes(searchKeyword);
+
+        return nameMatch || emailMatch;
       });
     },
   },
@@ -162,7 +160,7 @@ export default {
         console.error("Lỗi lấy danh sách độc giả:", error);
       }
     },
-    searchReaders() {
+    async searchReaders() {
       this.retrieveReaders();
     },
 

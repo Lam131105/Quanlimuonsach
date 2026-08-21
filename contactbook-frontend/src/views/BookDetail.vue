@@ -29,6 +29,14 @@
         <div class="col-md-7">
           <h3 class="text-dark font-weight-bold mb-3">{{ book.name }}</h3>
           <hr class="my-3" />
+          <div class="info-row mb-3">
+            <label class="font-weight-bold">
+              <i class="fas fa-building text-muted mr-1"></i> Mã sách:
+            </label>
+            <span class="info-value ml-2 text-dark font-weight-bold">
+              {{ book.bookid }}
+            </span>
+          </div>
 
           <div class="info-row mb-3">
             <label class="font-weight-bold">
@@ -73,21 +81,39 @@
               </span>
             </div>
           </div>
+
           <div class="info-row mb-3">
             <span class="info-label text-muted">
-              <i class="fas fa-tags mr-2"></i><strong>Số lượng:</strong>
+              <i class="fas fa-layer-group mr-2"></i
+              ><strong>Số lượng còn lại trong kho:</strong>
             </span>
-            <span class="text-muted">
-              {{ book.quantity || "Chưa phân loại" }}
+            <!-- Báo màu đỏ nếu hết sách -->
+            <span
+              :class="[
+                'font-weight-bold',
+                book.quantity > 0 ? 'text-success' : 'text-danger',
+              ]"
+            >
+              {{ book.quantity > 0 ? book.quantity : "Hết sách trong kho" }}
             </span>
           </div>
 
           <div class="info-row mb-3">
             <span class="info-label text-muted">
-              <i class="fas fa-tags mr-2"></i><strong>Năm:</strong>
+              <i class="fas fa-calendar-alt mr-2"></i
+              ><strong>Năm xuất bản:</strong>
             </span>
             <span class="text-muted">
               {{ book.year || "Chưa xác định" }}
+            </span>
+          </div>
+
+          <div class="info-row mb-3">
+            <span class="info-label text-muted">
+              <strong>Đơn giá khi làm mất sách:</strong>
+            </span>
+            <span class="text-muted">
+              {{ book.price || "Chưa xác định" }} VNĐ
             </span>
           </div>
 
@@ -104,6 +130,44 @@
                 "Hiện tại chưa có bài viết mô tả chi tiết cho cuốn sách này."
               }}
             </p>
+          </div>
+
+          <!-- 🚨 PHẦN BỔ SUNG: KHU VỰC CHỌN SỐ LƯỢNG VÀ ĐẶT MƯỢN ONLINE -->
+          <div class="booking-section border p-3 rounded bg-light mt-4">
+            <h6 class="font-weight-bold text-dark mb-3">
+              <i class="fas fa-shopping-basket text-primary mr-1"></i> ĐẶT MƯỢN
+              TRỰC TUYẾN
+            </h6>
+
+            <div class="form-inline d-flex flex-wrap align-items-center">
+              <div class="d-flex align-items-center mb-2 mb-sm-0 mr-3">
+                <label class="mr-2 font-weight-bold text-secondary mb-0"
+                  >Số lượng:</label
+                >
+                <input
+                  type="number"
+                  v-model.number="borrowQuantity"
+                  class="form-control text-center font-weight-bold border-primary shadow-sm"
+                  style="width: 80px"
+                  min="1"
+                  :max="book.quantity"
+                  :disabled="book.quantity <= 0"
+                />
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-warning px-4 font-weight-bold shadow-sm rounded-pill text-dark"
+                :disabled="book.quantity <= 0"
+                @click="handleOnlineBooking"
+              >
+                <i class="fas fa-paper-plane mr-1"></i> Đặt Mượn Ngay
+              </button>
+            </div>
+            <small class="form-text text-muted mt-2" v-if="book.quantity > 0">
+              * Hệ thống sẽ tự động giữ chỗ sách cho bạn trong 3 ngày tại quầy
+              tiếp tân. Hạn trả sách là 14 ngày kể từ thời điểm nhận sách tại quầy
+            </small>
           </div>
         </div>
       </div>
@@ -131,21 +195,22 @@
 import BookService from "@/services/book.service";
 import CategoryService from "@/services/category.service";
 import PublisherService from "@/services/publisher.service";
+import LoanService from "@/services/loan.service"; // ➕ Import thêm LoanService để tạo phiếu mượn trực tuyến
 
 export default {
   props: {
-    id: { type: String, required: true }, // Nhận mã ID sách từ URL
+    id: { type: String, required: true },
   },
   data() {
     return {
       book: null,
       imageExists: true,
-      categories: [], // Danh sách thể loại lấy từ API
-      publishers: [], // Danh sách nhà xuất bản lấy từ API
+      categories: [],
+      publishers: [],
+      borrowQuantity: 1, // ➕ Biến lưu số lượng độc giả chọn mượn trực tuyến
     };
   },
   methods: {
-    // Gọi API sang Backend để lấy thông tin cuốn sách dựa theo ID
     async getBook() {
       try {
         this.book = await BookService.get(this.id);
@@ -155,7 +220,7 @@ export default {
       }
     },
     goBack() {
-      this.$router.push({ name: "bookmanager" });
+      this.$router.push({ name: "book" });
     },
     getBookImage(imageName) {
       if (!imageName) return "";
@@ -164,7 +229,6 @@ export default {
     handleImageError() {
       this.imageExists = false;
     },
-
     async fetchCategories() {
       try {
         this.categories = await CategoryService.getAll();
@@ -172,12 +236,79 @@ export default {
         console.error("Lỗi lấy danh sách thể loại:", error);
       }
     },
-    // Hàm gọi API lấy danh sách Nhà xuất bản
     async fetchPublishers() {
       try {
         this.publishers = await PublisherService.getAll();
       } catch (error) {
         console.error("Lỗi lấy danh sách NXB:", error);
+      }
+    },
+
+    // 🚨 HÀM PHÁT TRIỂN MỚI: Xử lý khi Độc giả bấm nút "Đặt Mượn Ngay"
+    async handleOnlineBooking() {
+      // 1. Kiểm tra trạng thái đăng nhập của độc giả
+      const userLocal = localStorage.getItem("user");
+      if (!userLocal) {
+        alert(
+          "⚠️ Bạn cần đăng nhập tài khoản Độc giả trước khi thực hiện đặt sách trực tuyến!",
+        );
+        this.$router.push({ name: "login" });
+        return;
+      }
+
+      const reader = JSON.parse(userLocal);
+
+      // Phòng trường hợp tài khoản nhân viên vào nghịch bấm đặt trực tuyến
+      if (reader.role !== "reader") {
+        alert(
+          "⚠️ Tính năng đặt sách trực tuyến chỉ dành riêng cho tài khoản Độc giả!",
+        );
+        return;
+      }
+
+      // 2. Kiểm tra số lượng sách hợp lệ
+      if (this.borrowQuantity <= 0) {
+        alert("Số lượng sách mượn phải lớn hơn 0!");
+        return;
+      }
+      if (this.borrowQuantity > this.book.quantity) {
+        alert(
+          `Số lượng sách trong kho không đủ! Chỉ còn lại ${this.book.quantity} cuốn.`,
+        );
+        return;
+      }
+
+      // 3. Đóng gói dữ liệu chuẩn bị gửi lên API Backend
+      const payload = {
+        bookid: this.book._id,
+        readerid: reader._id, // Lấy trực tiếp từ tài khoản đăng nhập
+        quantity: this.borrowQuantity,
+        status: "Pending", // 🔥 Trạng thái Chờ duyệt để kích hoạt hạn 3 ngày và trừ kho ở Backend
+        staffid: null, // Đặt trực tuyến nên ban đầu chưa có nhân viên quầy xử lý
+      };
+
+      if (
+        confirm(
+          `Xác nhận đặt trực tuyến ${this.borrowQuantity} cuốn "${this.book.name}"?`,
+        )
+      ) {
+        try {
+          await LoanService.create(payload);
+
+          alert(
+            `🎉 Đặt sách trực tuyến thành công!\nSố lượng sách trong kho đã được cập nhật.\nVui lòng đến thư viện nhận sách trong vòng 3 ngày tới.`,
+          );
+
+          // Tải lại dữ liệu chi tiết sách để kho sách hiển thị cập nhật số mới vừa trừ
+          await this.getBook();
+          this.borrowQuantity = 1; // Reset số lượng về lại 1
+        } catch (error) {
+          console.error(error);
+          alert(
+            error.response?.data?.message ||
+              "Đặt mượn sách thất bại. Vui lòng thử lại sau!",
+          );
+        }
       }
     },
   },
@@ -191,7 +322,6 @@ export default {
 </script>
 
 <style scoped>
-/* Định dạng kích thước ảnh bìa cuốn sách cho cân đối */
 .book-cover-detail {
   max-height: 320px;
   width: auto;
@@ -205,14 +335,13 @@ export default {
   border: 2px dashed #dee2e6;
 }
 
-/* Định dạng ô hiển thị đoạn văn mô tả sách */
 .book-description-text {
   font-size: 0.95rem;
   line-height: 1.6;
-  white-space: pre-line; /* Giữ nguyên các dấu xuống dòng từ database */
+  white-space: pre-line;
   max-height: 250px;
-  overflow-y: auto; /* Tạo thanh cuộn nếu mô tả quá dài */
-  border-left: 4px solid #007bff; /* Tạo điểm nhấn màu xanh ở lề trái */
+  overflow-y: auto;
+  border-left: 4px solid #007bff;
 }
 
 .info-label {
@@ -227,8 +356,13 @@ export default {
   transition: transform 0.3s ease;
 }
 
-/* Hiệu ứng phóng to nhẹ ảnh bìa khi rê chuột vào nhìn rất nghệ thuật */
 .image-wrapper:hover {
   transform: scale(1.03);
+}
+
+/* Định dạng riêng cho khung đặt mượn */
+.booking-section {
+  border-left: 4px solid #ffc107 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 </style>

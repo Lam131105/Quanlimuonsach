@@ -116,7 +116,19 @@ export default {
           alert("Xóa sách thành công!");
           this.retrieveBooks(); // Tải lại danh sách sau khi xóa
         } catch (error) {
-          console.log(error);
+          // 2. BẮT LỖI TỪ BACKEND GỬI VỀ Ở ĐÂY
+          if (error.response && error.response.status === 400) {
+            // Trích xuất câu thông báo "Không thể xóa! Sách này hiện đang có dữ liệu..." từ Backend
+            alert(`⚠️ Cảnh báo: ${error.response.data.message}`);
+          } else if (error.response && error.response.status === 404) {
+            alert(
+              "❌ Lỗi: Cuốn sách này không tồn tại hoặc đã bị xóa trước đó.",
+            );
+          } else {
+            // Các lỗi hệ thống khác (như lỗi 500)
+            console.error(error);
+            alert("Có lỗi xảy ra trong quá trình xóa sách.");
+          }
         }
       }
     },

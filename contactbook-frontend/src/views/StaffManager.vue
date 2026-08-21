@@ -16,15 +16,10 @@
           class="d-flex flex-wrap justify-content-between align-items-center mb-4 bg-light p-3 rounded shadow-sm"
         >
           <div
-            class="search-box-wrapper w-100 max-w-md mb-2 mb-md-0"
-            style="max-width: 400px"
+            class="search-box-wrapper w-100 mb-3 mb-md-0"
+            style="max-width: 500px"
           >
-            <!-- Tái sử dụng ô tìm kiếm chung của dự án -->
-            <InputSearch
-              v-model="searchText"
-              @submit="searchStaffs"
-              placeholder="Tìm tên nhân viên, số điện thoại, gmail..."
-            />
+            <StaffSearch v-model="filter" @submit="searchStaffs" />
           </div>
           <div>
             <button
@@ -140,30 +135,34 @@
 </template>
 
 <script>
-import InputSearch from "@/components/InputSearch.vue";
 import StaffService from "@/services/staff.service"; // 1. Mở import service thật ra
+import StaffSearch from "@/components/StaffSearch.vue";
 
 export default {
   components: {
-    InputSearch,
+    StaffSearch,
   },
   data() {
     return {
       staffs: [],
-      searchText: "",
+     filter: {
+        name: "", // Từ khóa tìm kiếm gõ từ file con
+      },
     };
   },
   computed: {
     filteredStaffs() {
-      if (!this.searchText) return this.staffs;
+      const searchKeyword = this.filter.name
+        ? this.filter.name.trim().toLowerCase()
+        : "";
+      if (!searchKeyword) return this.staffs;
+
       return this.staffs.filter((staff) => {
-        const fullName = `${staff.lastName} ${staff.firstName}`.toLowerCase();
-        const search = this.searchText.toLowerCase();
-        return (
-          fullName.includes(search) ||
-          staff.gmail?.toLowerCase().includes(search) ||
-          staff.phone?.includes(search)
-        );
+        const nameMatch = staff.firstName?.toLowerCase().includes(searchKeyword);
+        const emailMatch = staff.gmail?.toLowerCase().includes(searchKeyword);
+
+        // Trúng 1 trong các điều kiện: Tên, SĐT, hoặc Chức vụ đều hiển thị
+        return nameMatch || emailMatch;
       });
     },
   },
@@ -176,8 +175,8 @@ export default {
         console.error("Lỗi lấy danh sách nhân viên:", error);
       }
     },
-    searchStaffs() {
-      this.retrieveStaffs();
+    async searchStaffs() {
+      await this.retrieveStaffs();
     },
 
     goToAddStaff() {

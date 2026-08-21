@@ -1,4 +1,5 @@
 <template>
+
   <div id="app" class="bg-light min-vh-100">
     <nav
       class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm px-4 py-2 main-navbar"
@@ -14,7 +15,7 @@
 
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item">
+          <li v-if="!$route.meta.requiresStaff" class="nav-item">
             <router-link
               :to="{ name: 'book' }"
               class="nav-link px-3 d-flex align-items-center"
@@ -23,64 +24,75 @@
               <i class="fas fa-book mr-1.5"></i> Thư viện sách
             </router-link>
           </li>
+          
+          <li v-if=" !$route.meta.requiresStaff" class="nav-item">
+            <router-link
+              :to="{ name: 'myloans'}"
+              class="nav-link px-3 d-flex align-items-center"
+              active-class="active"
+            >
+              <i class="fas fa-history mr-1.5"></i> Lịch sử mượn của tôi
+            </router-link>
+          </li>
+          <template v-if="$route.meta.requiresStaff">
+            <li class="nav-item">
+              <router-link
+                :to="{ name: 'loanmanager' }"
+                class="nav-link px-3 d-flex align-items-center"
+                active-class="active"
+              >
+                <i class="fas fa-tasks mr-1.5"></i> Quản lý mượn sách
+              </router-link>
+            </li>
+            <li class="nav-item">
+              <router-link
+                :to="{ name: 'bookmanager' }"
+                class="nav-link px-3 d-flex align-items-center"
+                active-class="active"
+              >
+                <i class="fas fa-cogs mr-1.5"></i> Quản lý sách
+              </router-link>
+            </li>
+            <li class="nav-item">
+              <router-link
+                :to="{ name: 'categorymanager' }"
+                class="nav-link px-3 d-flex align-items-center"
+                active-class="active"
+              >
+                <i class="fas fa-cogs mr-1.5"></i> Quản lí thể loại sách
+              </router-link>
+            </li>
 
-          <li class="nav-item">
-            <router-link
-              :to="{ name: 'loanmanager' }"
-              class="nav-link px-3 d-flex align-items-center"
-              active-class="active"
-            >
-              <i class="fas fa-tasks mr-1.5"></i> Quản lý mượn sách
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link
-              :to="{ name: 'bookmanager' }"
-              class="nav-link px-3 d-flex align-items-center"
-              active-class="active"
-            >
-              <i class="fas fa-cogs mr-1.5"></i> Quản lý sách
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link
-              :to="{ name: 'categorymanager' }"
-              class="nav-link px-3 d-flex align-items-center"
-              active-class="active"
-            >
-              <i class="fas fa-cogs mr-1.5"></i> Quản lí thể loại sách
-            </router-link>
-          </li>
+            <li class="nav-item">
+              <router-link
+                :to="{ name: 'publishermanager' }"
+                class="nav-link px-3 d-flex align-items-center"
+                active-class="active"
+              >
+                <i class="fas fa-cogs mr-1.5"></i> Quản lí nhà xuất bản
+              </router-link>
+            </li>
 
-          <li class="nav-item">
-            <router-link
-              :to="{ name: 'publishermanager' }"
-              class="nav-link px-3 d-flex align-items-center"
-              active-class="active"
-            >
-              <i class="fas fa-cogs mr-1.5"></i> Quản lí nhà xuất bản
-            </router-link>
-          </li>
+            <li class="nav-item">
+              <router-link
+                :to="{ name: 'staffmanager' }"
+                class="nav-link px-3 d-flex align-items-center"
+                active-class="active"
+              >
+                <i class="fas fa-cogs mr-1.5"></i> Quản lí nhân viên
+              </router-link>
+            </li>
 
-          <li class="nav-item">
-            <router-link
-              :to="{ name: 'staffmanager' }"
-              class="nav-link px-3 d-flex align-items-center"
-              active-class="active"
-            >
-              <i class="fas fa-cogs mr-1.5"></i> Quản lí nhân viên
-            </router-link>
-          </li>
-
-          <li class="nav-item">
-            <router-link
-              :to="{ name: 'readermanager' }"
-              class="nav-link px-3 d-flex align-items-center"
-              active-class="active"
-            >
-              <i class="fas fa-cogs mr-1.5"></i> Quản lí người đọc
-            </router-link>
-          </li>
+            <li class="nav-item">
+              <router-link
+                :to="{ name: 'readermanager' }"
+                class="nav-link px-3 d-flex align-items-center"
+                active-class="active"
+              >
+                <i class="fas fa-cogs mr-1.5"></i> Quản lí người đọc
+              </router-link>
+            </li>
+          </template>
         </ul>
 
         <ul class="navbar-nav ml-auto align-items-center">
@@ -122,7 +134,7 @@
                 class="btn btn-sm btn-link text-danger nav-link px-2 logout-btn"
                 title="Đăng xuất tài khoản"
               >
-                <i class="fas fa-power-off"></i>
+                <i class="fas fa-sign-out-alt"></i>
               </button>
             </li>
           </template>

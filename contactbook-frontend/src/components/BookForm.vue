@@ -1,7 +1,10 @@
+
 <template>
   <div class="card p-4 shadow-sm bg-light">
-    <form @submit.prevent="$emit('submit', localBook)">
+    <!-- CHÍNH SÁCH: Gọi hàm submitBook trong script chứ không emit trực tiếp localBook -->
+    <form @submit.prevent="submitBook">
       <div class="row">
+        <!-- Cột bên trái: Ảnh bìa và Chọn file -->
         <div class="col-md-4 text-center mb-3">
           <label class="font-weight-bold d-block mb-2">Ảnh bìa hiện tại</label>
           <div class="mb-3">
@@ -20,20 +23,30 @@
             </div>
           </div>
 
-          <div class="form-group text-left">
-            <label for="imgUrl" class="small font-weight-bold"
-              >Tên file ảnh (trong assets/images):</label
-            >
+          <!-- Ô chọn file ảnh -->
+          <div class="form-group mb-3">
+            <label for="bookImage" class="fw-bold">Chọn ảnh bìa sách:</label>
             <input
-              type="text"
-              id="imgUrl"
-              class="form-control form-control-sm"
-              v-model="localBook.imgUrl"
-              placeholder="Ví dụ: nensach.jpg"
+              type="file"
+              id="bookImage"
+              class="form-control"
+              accept="image/*"
+              @change="handleFileUpload"
             />
+
+            <!-- Khu vực hiển thị ảnh xem trước -->
+            <div v-if="imagePreview" class="mt-2 text-center">
+              <img
+                :src="imagePreview"
+                alt="Xem trước"
+                class="img-thumbnail"
+                style="max-height: 150px"
+              />
+            </div>
           </div>
         </div>
 
+        <!-- Cột bên phải: Các thông tin chi tiết của sách -->
         <div class="col-md-8">
           <div class="form-group">
             <label for="name" class="font-weight-bold">
@@ -115,9 +128,22 @@
             </label>
             <input
               type="number"
-              id="auth"
+              id="quantity"
               class="form-control"
               v-model="localBook.quantity"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="auth" class="font-weight-bold">
+              <i class="fas fa-user-edit text-muted mr-1"></i> Đơn giá:
+            </label>
+            <input
+              type="number"
+              id="price"
+              class="form-control"
+              v-model="localBook.price"
               required
             />
           </div>
@@ -128,7 +154,7 @@
             </label>
             <input
               type="number"
-              id="auth"
+              id="quantity"
               class="form-control"
               v-model="localBook.year"
             />
@@ -150,6 +176,7 @@
 
       <hr />
 
+      <!-- Thanh nút bấm điều hướng hành động -->
       <div class="d-flex justify-content-between mt-3">
         <button
           type="button"
@@ -162,7 +189,7 @@
           <button
             v-if="showDelete"
             type="button"
-            class="btn btn-danger mr-2"
+            class="btn btn-danger me-2"
             @click="$emit('delete')"
           >
             <i class="fas fa-trash-alt"></i> Xóa sách
@@ -180,6 +207,7 @@
 // Import 2 service bưu tá để lấy dữ liệu đổ vào form
 import CategoryService from "@/services/category.service";
 import PublisherService from "@/services/publisher.service";
+import bookService from "@/services/book.service";
 export default {
   props: {
     // Nhận object dữ liệu ban đầu
@@ -199,6 +227,8 @@ export default {
       categories: [], // Danh sách thể loại lấy từ API
       publishers: [], // Danh sách nhà xuất bản lấy từ API
       imageExists: true,
+      selectedFile: null, // Lưu trữ file ảnh thực tế (nhị phân)
+      imagePreview: null, // Lưu đường dẫn tạm thời để hiển thị lên màn hình
     };
   },
   watch: {
@@ -236,10 +266,83 @@ export default {
     },
     getBookImage(imageName) {
       if (!imageName) return "";
-      return new URL(`/src/assets/images/${imageName}`, import.meta.url).href;
+      return new URL(`/src/assets/imgbook/${imageName}`, import.meta.url).href;
     },
+
     handleImageError() {
       this.imageExists = false;
+    },
+
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Xóa bộ nhớ của ảnh xem trước cũ để tránh nặng RAM trình duyệt
+      if (this.imagePreview) {
+        URL.revokeObjectURL(this.imagePreview);
+      }
+
+      this.selectedFile = file; // Lưu file thật
+      this.imagePreview = URL.createObjectURL(file); // Tạo đường dẫn ảo để xem trước
+    },
+
+submitBook() {
+    // 1. Tạo một đối tượng FormData mới hoàn toàn
+    const formData = new FormData();
+
+    // 2. Đính kèm các trường văn bản thô
+    formData.append("name", this.localBook.name || "");
+    formData.append("auth", this.localBook.auth || "");
+    formData.append("publisherId", this.localBook.publisherId || "");
+    formData.append("year", this.localBook.year || "");
+    formData.append("price", this.localBook.price || "");
+    formData.append("quantity", this.localBook.quantity || "");
+    formData.append("description", this.localBook.description || "");
+
+    // Nếu có mảng thể loại sách, chuyển thành chuỗi JSON hoặc append từng phần tử
+    if (this.localBook.categoryIds && this.localBook.categoryIds.length > 0) {
+      this.localBook.categoryIds.forEach(id => {
+        formData.append("categoryIds[]", id);
+      });
+    }
+
+    // 3. ĐÍNH KÈM FILE ẢNH (Quan trọng nhất)
+    // Hãy chắc chắn rằng bạn chọn ảnh thì biến này phải có dữ liệu nhé
+    if (this.selectedFile) {
+      formData.append("image", this.selectedFile);
+    } else {
+      // Nếu chỉnh sửa sách mà không đổi ảnh, gửi lại URL ảnh cũ để Backend không bắt bẻ
+      formData.append("imgUrl", this.localBook.imgUrl || "");
+    }
+
+    // Mẹo kiểm tra nhanh xem file đã vào FormData chưa (vì console.log(formData) sẽ ra rỗng)
+    console.log("File ảnh thực tế gửi đi:", formData.get("image"));
+
+    // 4. Bắn sự kiện kèm cục formData ra cho component cha xử lý gọi API
+    this.$emit("submit", formData);
+  },
+
+    resetForm() {
+      // Thu hồi bộ nhớ ảnh xem trước để tránh rò rỉ RAM
+      if (this.imagePreview) {
+        URL.revokeObjectURL(this.imagePreview);
+      }
+
+      // CHÍNH SÁCH: Reset trên localBook chứ không gán lại vào prop 'this.book'
+      this.localBook = {
+        name: "",
+        year: "",
+        publisherId: "",
+        price: "",
+        categoryIds: [],
+      };
+
+      this.selectedFile = null;
+      this.imagePreview = null;
+
+      // Xóa tên file hiển thị trên thẻ input file HTML
+      const fileInput = document.getElementById("bookImage");
+      if (fileInput) fileInput.value = "";
     },
   },
   // Vừa vào form thì đi bốc dữ liệu từ DB về ngay

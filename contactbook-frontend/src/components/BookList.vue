@@ -35,8 +35,8 @@
           <div class="mt-2">
             <span
               class="badge badge-pill badge-light border text-secondary small"
-            >
-              {{ book.category || "N/A" }}
+            >Số lượng:
+              {{ book.quantity }}
             </span>
           </div>
         </div>
